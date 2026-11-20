@@ -5,11 +5,7 @@ RUTA_ARCHIVO = Path(__file__).resolve().parent / "datos" / "libros.json"
 
 
 def cargar_libros() -> list[dict]:
-    """Carga la lista de libros desde el archivo JSON.
-
-    Si el archivo no existe, está vacío, está dañado o no contiene una lista,
-    devuelve una lista vacía.
-    """
+    """Lee los libros del JSON o devuelve [] si falta o está roto."""
     try:
         contenido = RUTA_ARCHIVO.read_text(encoding="utf-8")
         if not contenido.strip():
@@ -24,14 +20,14 @@ def cargar_libros() -> list[dict]:
 
 
 def guardar_libros(libros: list[dict]) -> None:
-    """Guarda la lista de libros en el archivo JSON creando la carpeta si no existe."""
+    """Guarda los libros en el JSON (crea la carpeta si hace falta)."""
     RUTA_ARCHIVO.parent.mkdir(parents=True, exist_ok=True)
     with RUTA_ARCHIVO.open("w", encoding="utf-8") as archivo:
         json.dump(libros, archivo, indent=2, ensure_ascii=False)
 
 
 def obtener_siguiente_id(libros: list[dict]) -> int:
-    """Devuelve el próximo ID entero disponible sin reutilizar IDs eliminados."""
+    """Calcula el próximo ID sin repetir los ya borrados."""
     if not libros:
         return 1
     return max(int(libro["id"]) for libro in libros) + 1

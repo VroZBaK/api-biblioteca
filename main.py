@@ -18,7 +18,7 @@ siguiente_id: int = obtener_siguiente_id(libros)
 
 
 def _buscar_indice_por_id(libro_id: int) -> int | None:
-    """Devuelve el índice del libro con el ID indicado o None si no existe."""
+    """Busca la posición de un libro por ID."""
     for indice, libro in enumerate(libros):
         if int(libro["id"]) == libro_id:
             return indice
@@ -27,7 +27,7 @@ def _buscar_indice_por_id(libro_id: int) -> int | None:
 
 @app.get("/", status_code=200, summary="Mensaje de bienvenida")
 def raiz():
-    """Devuelve un mensaje de bienvenida de la API de la biblioteca."""
+    """Devuelve el saludo inicial de la API."""
     return {"mensaje": "API de la biblioteca"}
 
 
@@ -43,7 +43,7 @@ def listar_libros(
     desde: int = 0,
     limite: int = 100,
 ):
-    """Devuelve la lista de libros filtrada, ordenada por ID y paginada."""
+    """Lista libros con filtros opcionales y paginación."""
     resultado = sorted(libros, key=lambda libro: int(libro["id"]))
 
     if autor is not None:
@@ -58,6 +58,7 @@ def listar_libros(
     return resultado[desde : desde + limite]
 
 
+# Rutas fijas antes de /libros/{id} para que FastAPI no las tome como id entero
 @app.get(
     "/libros/buscar",
     response_model=list[LibroSalida],
@@ -65,7 +66,7 @@ def listar_libros(
     summary="Buscar libros por texto",
 )
 def buscar_libros(texto: str):
-    """Busca libros cuyo título o autor contenga el texto indicado."""
+    """Busca libros por texto en título o autor."""
     texto_norm = texto.lower()
     resultado = [
         libro
@@ -81,7 +82,7 @@ def buscar_libros(texto: str):
     summary="Obtener estadísticas de libros",
 )
 def obtener_estadisticas():
-    """Devuelve el total de libros, los disponibles y los prestados."""
+    """Devuelve cuántos libros hay en total, disponibles y prestados."""
     total = len(libros)
     disponibles = sum(1 for libro in libros if libro["disponible"])
     prestados = sum(1 for libro in libros if not libro["disponible"])
@@ -99,7 +100,7 @@ def obtener_estadisticas():
     summary="Crear un libro",
 )
 def crear_libro(libro: LibroEntrada):
-    """Crea un nuevo libro validando que no exista duplicado por título y autor."""
+    """Crea un libro nuevo si no está repetido."""
     global siguiente_id
 
     titulo_norm = libro.titulo.strip().lower()
@@ -137,7 +138,7 @@ def crear_libro(libro: LibroEntrada):
     summary="Obtener un libro por ID",
 )
 def obtener_libro(id: int):
-    """Devuelve un libro por su ID o 404 si no existe."""
+    """Trae un libro según su ID."""
     indice = _buscar_indice_por_id(id)
     if indice is None:
         logger.warning("Libro no encontrado al consultar ID %s", id)
@@ -152,7 +153,7 @@ def obtener_libro(id: int):
     summary="Reemplazar un libro por ID",
 )
 def actualizar_libro(id: int, datos: LibroEntrada):
-    """Reemplaza todos los campos de un libro existente conservando su ID."""
+    """Reemplaza todos los datos de un libro manteniendo su ID."""
     indice = _buscar_indice_por_id(id)
     if indice is None:
         logger.warning("Libro no encontrado al reemplazar ID %s", id)
@@ -173,7 +174,7 @@ def actualizar_libro(id: int, datos: LibroEntrada):
     summary="Actualizar parcialmente un libro",
 )
 def modificar_libro(id: int, cambios: LibroPatch):
-    """Actualiza parcialmente los campos enviados de un libro existente."""
+    """Actualiza solo los campos que se envíen del libro."""
     indice = _buscar_indice_por_id(id)
     if indice is None:
         logger.warning("Libro no encontrado al modificar ID %s", id)
@@ -198,7 +199,7 @@ def modificar_libro(id: int, cambios: LibroPatch):
     summary="Eliminar un libro por ID",
 )
 def eliminar_libro(id: int):
-    """Elimina un libro por su ID devolviendo 204 sin cuerpo."""
+    """Borra un libro por su ID."""
     indice = _buscar_indice_por_id(id)
     if indice is None:
         logger.warning("Libro no encontrado al eliminar ID %s", id)
@@ -207,3 +208,4 @@ def eliminar_libro(id: int):
     libros.pop(indice)
     guardar_libros(libros)
     logger.info("Libro eliminado con ID %s", id)
+    # Sin return para devolver 204 con cuerpo vacío

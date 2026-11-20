@@ -24,9 +24,42 @@ def raiz():
 
 
 @app.get("/libros", response_model=list[LibroSalida], status_code=200)
-def listar_libros():
-    """Devuelve la lista de libros ordenada por ID de menor a mayor."""
-    return sorted(libros, key=lambda libro: int(libro["id"]))
+def listar_libros(
+    autor: str | None = None,
+    disponible: bool | None = None,
+    desde: int = 0,
+    limite: int = 100,
+):
+    """Devuelve la lista de libros filtrada, ordenada por ID y paginada."""
+    resultado = sorted(libros, key=lambda libro: int(libro["id"]))
+
+    if autor is not None:
+        autor_norm = autor.strip().lower()
+        resultado = [
+            libro
+            for libro in resultado
+            if libro["autor"].strip().lower() == autor_norm
+        ]
+
+    if disponible is not None:
+        resultado = [
+            libro for libro in resultado if libro["disponible"] == disponible
+        ]
+
+    return resultado[desde : desde + limite]
+
+
+@app.get("/libros/buscar", response_model=list[LibroSalida], status_code=200)
+def buscar_libros(texto: str):
+    """Busca libros cuyo título o autor contenga el texto indicado."""
+    texto_norm = texto.lower()
+    resultado = [
+        libro
+        for libro in sorted(libros, key=lambda item: int(item["id"]))
+        if texto_norm in libro["titulo"].lower()
+        or texto_norm in libro["autor"].lower()
+    ]
+    return resultado
 
 
 @app.post("/libros", response_model=LibroSalida, status_code=201)
